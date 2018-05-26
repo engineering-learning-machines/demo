@@ -13,7 +13,7 @@ from matplotlib import patches, patheffects
 # ----------------------------------------------------------------------------------------------------------------------
 IMAGES, ANNOTATIONS, CATEGORIES = ['images', 'annotations', 'categories']
 FILE_NAME, ID, IMG_ID, CAT_ID, BBOX = 'file_name', 'id', 'image_id', 'category_id', 'bbox'
-PATH = Path('/home/rseed42/Data/pascal')
+PATH = Path('/home/ubuntu/data/pascal')
 JPEGS = 'train/VOC2007/JPEGImages'
 # ----------------------------------------------------------------------------------------------------------------------
 # Helpers
@@ -75,6 +75,9 @@ def get_lrg(b):
 
 
 if __name__ == '__main__':
+    #
+    acceleration = torch.cuda.is_available()
+    print('---- GPU Accelerion: {} ----'.format(acceleration))
     #
     trn_j = json.load((PATH/'PASCAL_VOC/pascal_train2007.json').open())
     cats = {o[ID]:o['name'] for o in trn_j[CATEGORIES]}
