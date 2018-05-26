@@ -166,6 +166,9 @@ if __name__ == '__main__':
 
     learn.fit(lrs/5, 1, cycle_len=2)
 
+
+    print('Models path: {}'.format(learn.models_path))
+
     learn.save('clas_one')
 
 
