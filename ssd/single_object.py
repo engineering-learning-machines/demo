@@ -64,10 +64,51 @@ def draw_idx(i):
     print(im.shape)
     draw_im(im, im_a)
 
+
 def get_lrg(b):
     if not b: raise Exception()
     b = sorted(b, key=lambda x: np.product(x[0][-2:]-x[0][:2]), reverse=True)
     return b[0]
+
+
+def detn_loss(input, target):
+    bb_t,c_t = target
+    bb_i,c_i = input[:, :4], input[:, 4:]
+    bb_i = F.sigmoid(bb_i)*224
+    # I looked at these quantities separately first then picked a multiplier
+    #   to make them approximately equal
+    return F.l1_loss(bb_i, bb_t) + F.cross_entropy(c_i, c_t)*20
+
+
+def detn_l1(input, target):
+    bb_t,_ = target
+    bb_i = input[:, :4]
+    bb_i = F.sigmoid(bb_i)*224
+    return F.l1_loss(V(bb_i),V(bb_t)).data
+
+
+def detn_acc(input, target):
+    _,c_t = target
+    c_i = input[:, 4:]
+    return accuracy(c_i, c_t)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Classes
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+class ConcatLblDataset(Dataset):
+    def __init__(self, ds, y2):
+        self.ds,self.y2 = ds,y2
+
+    def __len__(self):
+        return len(self.ds)
+
+    def __getitem__(self, i):
+        x,y = self.ds[i]
+        return (x, ( y, self.y2[i] ) )
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 # MAIN
@@ -129,48 +170,78 @@ if __name__ == '__main__':
 
     # Some hyperparams, also images get resized to 224
     f_model = resnet34
-    sz=224
-    bs=64
-    # Create some augmented data
-    tfms = tfms_from_model(f_model, sz, aug_tfms=transforms_side_on, crop_type=CropType.NO)
-    md = ImageClassifierData.from_csv(PATH, JPEGS, CSV, tfms=tfms, bs=bs)
+    sz = 224
+    bs = 64
+
+    BB_CSV = PATH/'tmp/bb.csv'
+    bb = np.array([trn_lrg_anno[o][0] for o in trn_ids])
+    bbs = [' '.join(str(p) for p in o) for o in bb]
+
+    df = pd.DataFrame({'fn': [trn_fns[o] for o in trn_ids], 'bbox': bbs}, columns=['fn','bbox'])
+    df.to_csv(BB_CSV, index=False)
+
+
+    tfm_y = TfmType.COORD
+    augs = [RandomFlip(tfm_y=tfm_y),
+            RandomRotate(3, p=0.5, tfm_y=tfm_y),
+            RandomLighting(0.05,0.05, tfm_y=tfm_y)]
+
+    val_idxs = get_cv_idxs(len(trn_fns))
+    tfms = tfms_from_model(f_model, sz, crop_type=CropType.NO, tfm_y=TfmType.COORD, aug_tfms=augs)
+
+    # Training Data
+    md = ImageClassifierData.from_csv(PATH, JPEGS, BB_CSV, tfms=tfms, bs=bs, continuous=True, val_idxs=val_idxs)
+    md2 = ImageClassifierData.from_csv(PATH, JPEGS, CSV, tfms=tfms_from_model(f_model, sz))
+
+    trn_ds2 = ConcatLblDataset(md.trn_ds, md2.trn_y)
+    val_ds2 = ConcatLblDataset(md.val_ds, md2.val_y)
+
+    md.trn_dl.dataset = trn_ds2
+    md.val_dl.dataset = val_ds2
 
     # x, y = next(iter(md.val_dl))
-    # show_img(md.val_ds.denorm(to_np(x))[0])
+    # idx=3
+    # ima=md.val_ds.ds.denorm(to_np(x))[idx]
+    # b = bb_hw(to_np(y[0][idx]))
+    # print(b)
+
+    # ax = show_img(ima)
+    # draw_rect(ax, b)
+    # draw_text(ax, b[:2], md2.classes[y[1][idx]])
     # plt.show()
 
-    learn = ConvLearner.pretrained(f_model, md, metrics=[accuracy])
+    head_reg4 = nn.Sequential(
+        Flatten(),
+        nn.ReLU(),
+        nn.Dropout(0.5),
+        nn.Linear(25088, 256),
+        nn.ReLU(),
+        nn.BatchNorm1d(256),
+        nn.Dropout(0.5),
+        nn.Linear(256, 4+len(cats)),
+    )
+    models = ConvnetBuilder(f_model, 0, 0, 0, custom_head=head_reg4)
+
+    learn = ConvLearner(md, models)
     learn.opt_fn = optim.Adam
+    learn.crit = detn_loss
+    learn.metrics = [detn_acc, detn_l1]
 
-    # lrf = learn.lr_find(1e-5, 100)
+    lr = 1e-2
+    learn.fit(lr, 1, cycle_len=3, use_clr=(32, 5))
 
-    # learn.sched.plot(n_skip=5, n_skip_end=1)
-    # plt.show()
-
-    # Choose the learning rate
-    lr = 2e-2
-
-    # Now train
-    learn.fit(lr, 1, cycle_len=1)
-
-    # Choose a learning rate for the different layers
-    lrs = np.array([lr/1000, lr/100, lr])
+    learn.save('reg1_0')
     learn.freeze_to(-2)
+    lrs = np.array([lr/100, lr/10, lr])
 
-    lrf=learn.lr_find(lrs/1000)
+    learn.lr_find(lrs/1000)
 
-    # Retrain with different learning rates
-    learn.fit(lrs/5, 1, cycle_len=1)
+    learn.fit(lrs/5, 1, cycle_len=5, use_clr=(32, 10))
+    learn.save('reg1_1')
 
+    learn.load('reg1_1')
     learn.unfreeze()
 
-    learn.fit(lrs/5, 1, cycle_len=2)
-
-
-    print('Models path: {}'.format(learn.models_path))
-
-    learn.save('clas_one')
-
-
-
+    learn.fit(lrs/10, 1, cycle_len=10, use_clr=(32, 10))
+    learn.save('reg1')
 
