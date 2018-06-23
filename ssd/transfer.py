@@ -9,6 +9,8 @@ from fastai.model import resnet34, resnet50
 from fastai.transforms import tfms_from_model
 from fastai.dataset import ImageClassifierData
 
+import matplotlib.pyplot as plt
+
 IMAGE_BASE_DIR = '/Users/g6714/Data/fastai/dogscats'
 EPOCH_COUNT = 25
 IMAGE_SIZE = 224
@@ -31,8 +33,11 @@ def main(imgdir, epochs):
     data = ImageClassifierData.from_paths(imgdir, tfms=tfms_from_model(model, IMAGE_SIZE))
     learn = ConvLearner.pretrained(model, data, precompute=True)
 
-    # lrf = learn.lr_find()
-    learn.fit(0.01, 2)
+    lrf = learn.lr_find()
+
+    learn.sched.plot()
+    plt.savefig('lr_find.png')
+    # learn.fit(0.01, 2)
 
 
 if __name__ == '__main__':
