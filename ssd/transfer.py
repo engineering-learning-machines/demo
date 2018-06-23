@@ -4,12 +4,15 @@ import argparse
 import sys
 import logging
 import torch
+# Import matplotlib and choose a different backend that doesn't need the X server
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+
 from fastai.conv_learner import ConvLearner
 from fastai.model import resnet34, resnet50
-from fastai.transforms import tfms_from_model
+from fastai.transforms import tfms_from_model, transforms_side_on
 from fastai.dataset import ImageClassifierData
-
-import matplotlib.pyplot as plt
 
 IMAGE_BASE_DIR = '/Users/g6714/Data/fastai/dogscats'
 EPOCH_COUNT = 25
@@ -30,14 +33,15 @@ def main(imgdir, epochs):
     log.info(f'Cuda backend enabled: {torch.backends.cudnn.enabled}')
 
     model = resnet34
-    data = ImageClassifierData.from_paths(imgdir, tfms=tfms_from_model(model, IMAGE_SIZE))
+    tfms = tfms_from_model(resnet34, IMAGE_SIZE, aug_tfms=transforms_side_on, max_zoom=1.1)
+    data = ImageClassifierData.from_paths(imgdir, tfms=tfms)
     learn = ConvLearner.pretrained(model, data, precompute=True)
 
-    lrf = learn.lr_find()
+    # lrf = learn.lr_find()
+    # learn.sched.plot()
+    # plt.savefig('lr_find.png')
 
-    learn.sched.plot()
-    plt.savefig('lr_find.png')
-    # learn.fit(0.01, 2)
+    learn.fit(1e-2, 1)
 
 
 if __name__ == '__main__':
