@@ -32,7 +32,8 @@ def main(imgdir, epochs):
     log.info(f'Cuda available: {torch.cuda.is_available()}')
     log.info(f'Cuda backend enabled: {torch.backends.cudnn.enabled}')
 
-    model = resnet34
+    # model = resnet34
+    model = resnet50
     tfms = tfms_from_model(resnet34, IMAGE_SIZE, aug_tfms=transforms_side_on, max_zoom=1.1)
     data = ImageClassifierData.from_paths(imgdir, tfms=tfms)
     learn = ConvLearner.pretrained(model, data, precompute=True)
