@@ -146,8 +146,9 @@ class MultiClassifier(object):
         lr_rates = np.array([last_layer_learning_rate/100, last_layer_learning_rate/10, last_layer_learning_rate])
         self.learner.freeze_to(-2)
         self.learner.lr_find(lr_rates/1000)
-        self.learner.sched.plot(0)
-        plt.savefig('diff_learning_rate_00.png')
+        for i in lr_rates.shape[0]:
+            self.learner.sched.plot(0)
+            plt.savefig('diff_learning_rate_{:0>2}.png'.format(i))
 
     @staticmethod
     def save_csv(csv_path, id_category_map, id_filename_map, annotations, image_ids):
