@@ -16,9 +16,12 @@ import matplotlib.pyplot as plt
 # Project-level imports
 from util import bb_hw
 from fastai.conv_learner import resnet34, ConvLearner
-from fastai.dataset import ImageClassifierData
+from fastai.dataset import ImageClassifierData, to_np
 from fastai.transforms import tfms_from_model, CropType
+from fastai import to_np
 from torch import optim
+
+from vis import plot_multiclass_predict
 # ----------------------------------------------------------------------------------------------------------------------
 #
 # ----------------------------------------------------------------------------------------------------------------------
@@ -114,13 +117,13 @@ class MultiClassifier(object):
         # Non-agumented transforms
         self.non_aug_transforms = tfms_from_model(self.model, self.image_size, crop_type=CropType.NO)
         # Automatically appends the second 'folder' param to the first - beware!
-        md = ImageClassifierData.from_csv(
+        self.md = ImageClassifierData.from_csv(
             metadata.basedir_path,
             metadata.train.image_subdir,
             mc_csv, tfms=self.non_aug_transforms,
             bs=self.batch_size
         )
-        self.learner = ConvLearner.pretrained(self.model, md)
+        self.learner = ConvLearner.pretrained(self.model, self.md)
         self.learner.opt_fn = optim.Adam
 
     def find_last_layer_learning_rate(self):
@@ -162,6 +165,14 @@ class MultiClassifier(object):
         self.learner.fit(diff_learning_rates, 1, cycle_len=5, use_clr=(32, 5))
         self.learner.save(MULTI_CLASS_MODEL_PARAMS_FILE)
 
+    def plot_predictions(self):
+        self.learner.load(MULTI_CLASS_MODEL_PARAMS_FILE)
+        y = self.learn.predict()
+        x, _ = next(iter(self.md.val_dl))
+        x = to_np(x)
+        plot_multiclass_predict(x, y, self.md)
+        plt.savefig('multiclass_predict.png')
+
     @staticmethod
     def save_csv(csv_path, id_category_map, id_filename_map, annotations, image_ids):
         mc = [set([id_category_map[p[1]] for p in annotations[o]]) for o in image_ids]
@@ -190,8 +201,10 @@ def main(basedir, epochs):
     # 03 Find the differential learning rates based on the trained last layer
     # multi_classifier.find_differential_learning_rates(2e-2)
     # 04 Train the model with the differential learning rates
-    lr = 2e-2/10.
-    multi_classifier.train(np.array([lr/100, lr/10, lr]))
+    # lr = 2e-2/10.
+    # multi_classifier.train(np.array([lr/100, lr/10, lr]))
+    # 05 See the results
+    multi_classifier.plot_predictions()
 
 
     # parent_dir = Path(basedir)

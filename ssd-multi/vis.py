@@ -43,3 +43,14 @@ def draw_text(ax, xy, txt, sz=14, color='white'):
 #     im_a = trn_anno[i]
 #     im = open_image(IMG_PATH/trn_fns[i])
 #     draw_im(im, im_a)
+
+
+def plot_multiclass_predict(x, y, md):
+    fig, axes = plt.subplots(3, 4, figsize=(12, 8))
+    for i, ax in enumerate(axes.flat):
+        ima = md.val_ds.denorm(x)[i]
+        ya = np.nonzero(y[i] > 0.4)[0]
+        b = '\n'.join(md.classes[o] for o in ya)
+        ax = show_img(ima, ax=ax)
+        draw_text(ax, (0, 0), b)
+    plt.tight_layout()
