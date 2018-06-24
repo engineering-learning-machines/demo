@@ -31,6 +31,8 @@ IMAGE_SIZE = 224
 LAST_LAYER_LEARNING_RATE_IMG_FILE = 'last_layer_learning_rate.png'
 DIFFERENTIAL_LEARNING_RATE_IMG_FILE = 'differential_learning_rate.png'
 LAST_LAYER_MODEL_PARAMS_FILE = 'last_layer'
+MULTI_CLASS_MODEL_PARAMS_FILE = 'multi_class'
+
 
 log = logging.getLogger('transfer')
 log.setLevel(logging.DEBUG)
@@ -158,6 +160,7 @@ class MultiClassifier(object):
         self.learner.load(LAST_LAYER_MODEL_PARAMS_FILE)
         self.learner.freeze_to(-2)
         self.learner.fit(diff_learning_rates, 1, cycle_len=5, use_clr=(32, 5))
+        self.learner.save(MULTI_CLASS_MODEL_PARAMS_FILE)
 
     @staticmethod
     def save_csv(csv_path, id_category_map, id_filename_map, annotations, image_ids):
