@@ -139,6 +139,15 @@ class MultiClassifier(object):
         self.learner.fit(learning_rate, 1, cycle_len=3, use_clr=(32, 5))
         self.learner.save(LAST_LAYER_MODEL_PARAMS_FILE)
 
+    def find_differential_learning_rates(self, last_layer_learning_rate):
+
+        # We need to load the model first
+        self.learner.load(LAST_LAYER_MODEL_PARAMS_FILE)
+        lr_rates = np.array([last_layer_learning_rate/100, last_layer_learning_rate/10, last_layer_learning_rate])
+        self.learner.freeze_to(-2)
+        self.learner.lr_find(lr_rates/1000)
+        self.learner.sched.plot(0)
+
     @staticmethod
     def save_csv(csv_path, id_category_map, id_filename_map, annotations, image_ids):
         mc = [set([id_category_map[p[1]] for p in annotations[o]]) for o in image_ids]
@@ -163,8 +172,9 @@ def main(basedir, epochs):
     # multi_classifier.find_last_layer_learning_rate()
     # Found last layer learning rate: 2e-2
     # 02 Train the last layer only with the determined learning rate
-    multi_classifier.train_last_layer(2e-2)
-
+    # multi_classifier.train_last_layer(2e-2)
+    # 03 Find the differential learning rates based on the trained last layer
+    multi_classifier.find_differential_learning_rates(2e-2)
 
 
 
