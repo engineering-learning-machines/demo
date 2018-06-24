@@ -45,7 +45,10 @@ def main(imgdir, epochs):
     # learn.fit(1e-2, 1)
     # Accuracy: 0.9905
 
-    # learn.precompute=False
+    # learn.fit(1e-2, 3, cycle_len=1)
+    # Accuracy: 0.991
+
+    learn.precompute=False
     learn.fit(1e-2, 3, cycle_len=1)
 
 
