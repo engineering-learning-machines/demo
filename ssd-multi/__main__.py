@@ -29,6 +29,7 @@ TRAINING_IMAGE_SUBDIR = 'train/VOC2007/JPEGImages'
 EPOCH_COUNT = 25
 IMAGE_SIZE = 224
 LAST_LAYER_LEARNING_RATE_IMG_FILE = 'last_layer_learning_rate.png'
+DIFFERENTIAL_LEARNING_RATE_IMG_FILE = 'differential_learning_rate.png'
 LAST_LAYER_MODEL_PARAMS_FILE = 'last_layer'
 
 log = logging.getLogger('transfer')
@@ -146,9 +147,8 @@ class MultiClassifier(object):
         lr_rates = np.array([last_layer_learning_rate/100, last_layer_learning_rate/10, last_layer_learning_rate])
         self.learner.freeze_to(-2)
         self.learner.lr_find(lr_rates/1000)
-        for i in lr_rates.shape[0]:
-            self.learner.sched.plot(0)
-            plt.savefig('diff_learning_rate_{:0>2}.png'.format(i))
+        self.learner.sched.plot(0)
+        plt.savefig(DIFFERENTIAL_LEARNING_RATE_IMG_FILE)
 
     @staticmethod
     def save_csv(csv_path, id_category_map, id_filename_map, annotations, image_ids):
@@ -177,6 +177,7 @@ def main(basedir, epochs):
     # multi_classifier.train_last_layer(2e-2)
     # 03 Find the differential learning rates based on the trained last layer
     multi_classifier.find_differential_learning_rates(2e-2)
+    # 04 Train the model with the differential learning rates
 
 
 
