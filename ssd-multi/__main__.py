@@ -86,7 +86,11 @@ class MetaData(object):
 
 class MultiClassifier(object):
     def __init__(self, metadata):
-        mc_csv = metadata.basedir_path / 'tmp/mc.csv'
+        # The temp folder does not exist initially
+        tmp_dir = metadata.basedir_path / 'tmp'
+        if not os.path.exists(tmp_dir):
+            os.mkdir(tmp_dir)
+        mc_csv = tmp_dir / 'mc.csv'
         # Example annotation: bounding box + category id
         # print(metadata.training.annotations[12])
 
