@@ -18,7 +18,6 @@ from util import bb_hw
 from fastai.conv_learner import resnet34, ConvLearner
 from fastai.dataset import ImageClassifierData, to_np
 from fastai.transforms import tfms_from_model, CropType
-from fastai import to_np
 from torch import optim
 
 from vis import plot_multiclass_predict
