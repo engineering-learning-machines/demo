@@ -94,13 +94,21 @@ class MultiClassifier(object):
         # Example annotation: bounding box + category id
         # print(metadata.training.annotations[12])
 
+        # Generate and store the multi-class label csv file
+        self.save_csv(
+            mc_csv,
+            metadata.train.id_category_map,
+            metadata.train.id_filename_map,
+            metadata.train.annotations,
+            metadata.train.annotations
+        )
         # Prepare the model
         self.model = resnet34
         self.image_size = 224
         self.batch_size = 64
         # Non-agumented transforms
         self.non_aug_transforms = tfms_from_model(self.model, self.image_size, crop_type=CropType.NO)
-        # For some dumb reason this requires relative paths
+        # Automatically appends the second 'folder' param to the first - beware!
         md = ImageClassifierData.from_csv(
             metadata.basedir_path,
             metadata.train.image_subdir,
@@ -115,7 +123,8 @@ class MultiClassifier(object):
         self.learner.sched.plot(0)
         plt.savefig('lr_find.png')
 
-    def save_csv(self, csv_path, id_category_map, id_filename_map, annotations, image_ids):
+    @staticmethod
+    def save_csv(csv_path, id_category_map, id_filename_map, annotations, image_ids):
         mc = [set([id_category_map[p[1]] for p in annotations[o]]) for o in image_ids]
         mcs = [' '.join(str(p) for p in o) for o in mc]
         df = pd.DataFrame({'fn': [id_filename_map[o] for o in image_ids], 'clas': mcs}, columns=['fn', 'clas'])
