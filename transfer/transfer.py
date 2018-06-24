@@ -38,6 +38,9 @@ def main(imgdir, epochs):
     data = ImageClassifierData.from_paths(imgdir, tfms=tfms)
     learn = ConvLearner.pretrained(model, data, precompute=True)
 
+
+    learn.sched.plot_lr()
+
     # lrf = learn.lr_find()
     # learn.sched.plot()
     # plt.savefig('lr_find.png')
@@ -48,8 +51,8 @@ def main(imgdir, epochs):
     # learn.fit(1e-2, 3, cycle_len=1)
     # Accuracy: 0.991
 
-    learn.precompute=False
-    learn.fit(1e-2, 3, cycle_len=1)
+    # learn.precompute=False
+    # learn.fit(1e-2, 3, cycle_len=1)
 
 
 
