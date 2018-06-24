@@ -28,7 +28,8 @@ TRAINING_METADATA_DIR = 'PASCAL_VOC/pascal_train2007.json'
 TRAINING_IMAGE_SUBDIR = 'train/VOC2007/JPEGImages'
 EPOCH_COUNT = 25
 IMAGE_SIZE = 224
-BASE_LEARNING_RATE_IMG_FILE = 'base_learning_rate.png'
+LAST_LAYER_LEARNING_RATE_IMG_FILE = 'last_layer_learning_rate.png'
+LAST_LAYER_MODEL_PARAMS_FILE = 'last_layer'
 
 log = logging.getLogger('transfer')
 log.setLevel(logging.DEBUG)
@@ -119,14 +120,24 @@ class MultiClassifier(object):
         self.learner = ConvLearner.pretrained(self.model, md)
         self.learner.opt_fn = optim.Adam
 
-    def find_base_learning_rate(self):
+    def find_last_layer_learning_rate(self):
         """
         Use this first to decide what base learning rate to use
         :return:
         """
         lr_finder = self.learner.lr_find(1e-5, 100)
         self.learner.sched.plot(0)
-        plt.savefig(BASE_LEARNING_RATE_IMG_FILE)
+        plt.savefig(LAST_LAYER_LEARNING_RATE_IMG_FILE)
+
+    def train_last_layer(self, learning_rate):
+        """
+        After finding the optimal last layer learning rate, pretrain the last layer to find
+        good model params for further trainings.
+        :param learning_rate:
+        :return:
+        """
+        self.learner.fit(learning_rate, 1, cycle_len=3, use_clr=(32, 5))
+        self.learner.save(LAST_LAYER_MODEL_PARAMS_FILE)
 
     @staticmethod
     def save_csv(csv_path, id_category_map, id_filename_map, annotations, image_ids):
@@ -148,7 +159,12 @@ def main(basedir, epochs):
 
     metadata = MetaData.create(basedir)
     multi_classifier = MultiClassifier(metadata)
-    multi_classifier.find_base_learning_rate()
+    # 01 Find the base learning rate first
+    # multi_classifier.find_last_layer_learning_rate()
+    # Found last layer learning rate: 2e-2
+    # 02 Train the last layer only with the determined learning rate
+    multi_classifier.train_last_layer(2e-2)
+
 
 
 
