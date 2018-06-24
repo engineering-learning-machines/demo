@@ -147,6 +147,7 @@ class MultiClassifier(object):
         self.learner.freeze_to(-2)
         self.learner.lr_find(lr_rates/1000)
         self.learner.sched.plot(0)
+        plt.savefig('diff_learning_rate_00.png')
 
     @staticmethod
     def save_csv(csv_path, id_category_map, id_filename_map, annotations, image_ids):
