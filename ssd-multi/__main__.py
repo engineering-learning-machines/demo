@@ -166,7 +166,7 @@ class MultiClassifier(object):
 
     def plot_predictions(self):
         self.learner.load(MULTI_CLASS_MODEL_PARAMS_FILE)
-        y = self.learn.predict()
+        y = self.learner.predict()
         x, _ = next(iter(self.md.val_dl))
         x = to_np(x)
         plot_multiclass_predict(x, y, self.md)
