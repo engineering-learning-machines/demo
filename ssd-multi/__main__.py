@@ -179,18 +179,17 @@ class MultiClassifier(object):
         df = pd.DataFrame({'fn': [id_filename_map[o] for o in image_ids], 'clas': mcs}, columns=['fn', 'clas'])
         df.to_csv(csv_path, index=False)
 
-
-
 # ----------------------------------------------------------------------------------------------------------------------
-#
+# Models
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-def main(basedir, epochs):
-    log.info(f'Cuda available: {torch.cuda.is_available()}')
-    log.info(f'Cuda backend enabled: {torch.backends.cudnn.enabled}')
-
-    metadata = MetaData.create(basedir)
+def multi_classify(metadata):
+    """
+    Classify multiple objects on the image
+    :param metadata:
+    :return:
+    """
     multi_classifier = MultiClassifier(metadata)
     # 01 Find the base learning rate first
     # multi_classifier.find_last_layer_learning_rate()
@@ -204,6 +203,20 @@ def main(basedir, epochs):
     # multi_classifier.train(np.array([lr/100, lr/10, lr]))
     # 05 See the results
     multi_classifier.plot_predictions()
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Main
+# ----------------------------------------------------------------------------------------------------------------------
+
+
+def main(basedir, epochs):
+    log.info(f'Cuda available: {torch.cuda.is_available()}')
+    log.info(f'Cuda backend enabled: {torch.backends.cudnn.enabled}')
+
+    metadata = MetaData.create(basedir)
+
+    # The simplest model: Multi-label classifier
+    multi_classify(metadata)
 
 
     # parent_dir = Path(basedir)
