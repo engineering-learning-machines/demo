@@ -141,7 +141,11 @@ class MultiClassifier(object):
         self.learner.save(LAST_LAYER_MODEL_PARAMS_FILE)
 
     def find_differential_learning_rates(self, last_layer_learning_rate):
-
+        """
+        With the pre-trained last layer model find the learning rates for several layers
+        :param last_layer_learning_rate:
+        :return:
+        """
         # We need to load the model first
         self.learner.load(LAST_LAYER_MODEL_PARAMS_FILE)
         lr_rates = np.array([last_layer_learning_rate/100, last_layer_learning_rate/10, last_layer_learning_rate])
