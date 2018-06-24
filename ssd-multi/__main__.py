@@ -10,7 +10,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from fastai.conv_learner import ConvLearner
-from fastai.model import resnet34, resnet50
+from fastai.model import resnet34
 from fastai.transforms import tfms_from_model, transforms_side_on
 from fastai.dataset import ImageClassifierData
 
